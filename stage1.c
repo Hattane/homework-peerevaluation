@@ -1,129 +1,121 @@
 #include <stdio.h>
+#include <stdlib.h>  // For atoi()
 #include <string.h>
+#include <ctype.h>
 
-#define STAGE_COUNT 8
+#define MAX_STAGES 8
+#define MENU_ROWS 3
+#define MENU_COLS 40  // Increased to avoid string length warnings
 
-const char *trainingStages[STAGE_COUNT] = {
-    "1. Physical Strength & Knowledge",
-    "2. Self-Management & Teamwork",
+// Simulate 2D arrays using 1D array of strings
+char mainMenu[MENU_ROWS][MENU_COLS] = {
+    "I. Audition Management",
+    "II. Training",
+    "III. Debut"
+};
+
+char trainingMenu[MAX_STAGES][MENU_COLS] = {
+    "1. Physical & Knowledge",
+    "2. Self & Teamwork",
     "3. Language & Pronunciation",
     "4. Vocal",
     "5. Dance",
     "6. Visual & Image",
-    "7. Acting & Stage Performance",
+    "7. Acting & Stage",
     "8. Fan Communication"
 };
 
-char results[STAGE_COUNT] = { 'N','N','N','N','N','N','N','N' };
+char trainingResult[MAX_STAGES] = {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '};
 
-void showMainMenu();
-void showTrainingMenu();
-void handleStage(int index);
-void printTrainingStatus();
-int checkStageAccess(int index);
-
-int main() {
-    showMainMenu();
-    return 0;
+// Function to check if training stage is unlocked
+int isUnlocked(int stage) {
+    if (stage == 0) return 1;
+    if (stage == 1) return trainingResult[0] == 'P';
+    return trainingResult[0] == 'P' && trainingResult[1] == 'P';
 }
 
+// Display main menu
 void showMainMenu() {
-    char input[10];
-
-    while (1) {
-        printf("\n==== MAGRATHEA MAIN MENU ====\n");
-        printf("1. Audition Management\n");
-        printf("2. Training\n");
-        printf("3. Debut\n");
-        printf("Enter your choice (0 or Q to quit): ");
-        fgets(input, sizeof(input), stdin);
-
-        if (input[0] == '0' || input[0] == 'q' || input[0] == 'Q' || input[0] == '\n') {
-            printf("Exiting program. Goodbye!\n");
-            break;
-        }
-
-        if (input[0] == '1') {
-            printf("\n[Audition Management Placeholder]\n");
-        } else if (input[0] == '2') {
-            showTrainingMenu();
-        } else if (input[0] == '3') {
-            printf("\n[Debut Placeholder]\n");
-        } else {
-            printf("Invalid option. Try again.\n");
-        }
+    printf("\n--- Main Menu ---\n");
+    for (int i = 0; i < MENU_ROWS; i++) {
+        printf("%d. %s\n", i + 1, mainMenu[i]);
     }
+    printf("Enter choice (0/Q/q to quit): ");
 }
 
+// Display training menu
 void showTrainingMenu() {
-    char input[10];
-
-    while (1) {
-        printf("\n==== TRAINING MENU ====\n");
-        printTrainingStatus();
-
-        printf("Select a stage to train (1-8) or 0/Q to go back: ");
-        fgets(input, sizeof(input), stdin);
-
-        if (input[0] == '0' || input[0] == 'q' || input[0] == 'Q' || input[0] == '\n') {
-            printf("Returning to main menu.\n");
-            break;
-        }
-
-        int stage = input[0] - '1';
-
-        if (stage >= 0 && stage < STAGE_COUNT) {
-            if (checkStageAccess(stage)) {
-                handleStage(stage);
-            }
-        } else {
-            printf("Invalid stage number. Try again.\n");
-        }
+    printf("\n--- Training Menu ---\n");
+    for (int i = 0; i < MAX_STAGES; i++) {
+        printf("%d. %s", i + 1, trainingMenu[i]);
+        if (trainingResult[i] == 'P') printf(" [Completed]");
+        else if (trainingResult[i] == 'F') printf(" [Failed]");
+        printf("\n");
     }
+    printf("Enter training stage (0 to return): ");
 }
 
-void printTrainingStatus() {
-    for (int i = 0; i < STAGE_COUNT; i++) {
-        printf("%s\t[Status: %c]\n", trainingStages[i], results[i]);
+// Handle evaluation logic
+void handleTraining(int index) {
+    if (!isUnlocked(index)) {
+        printf("You must pass previous stages to access this one.\n");
+        return;
     }
-}
-
-void handleStage(int index) {
-    char input[10];
-
-    if (results[index] == 'P') {
-        printf("You already passed this stage. You can't retake it.\n");
+    if (trainingResult[index] == 'P') {
+        printf("This stage is already completed.\n");
         return;
     }
 
-    printf("Would you like to enter the evaluation result for %s? (Y/N): ", trainingStages[index]);
-    fgets(input, sizeof(input), stdin);
-
-    if (input[0] == 'Y' || input[0] == 'y') {
-        printf("Did you pass the training? (Y/N): ");
-        fgets(input, sizeof(input), stdin);
-
-        if (input[0] == 'Y' || input[0] == 'y') {
-            results[index] = 'P';
-            printf("Stage %d marked as PASSED.\n", index + 1);
+    char input;
+    printf("Would you like to enter the evaluation result? (Y/N): ");
+    scanf(" %c", &input);
+    if (toupper(input) == 'Y') {
+        printf("Did you complete the training and pass the certification? (P/F): ");
+        scanf(" %c", &input);
+        if (toupper(input) == 'P' || toupper(input) == 'F') {
+            trainingResult[index] = toupper(input);
         } else {
-            results[index] = 'F';
-            printf("Stage %d marked as FAILED.\n", index + 1);
+            printf("Invalid input. Returning to menu.\n");
         }
-    } else {
-        printf("No evaluation entered. Returning to training menu.\n");
     }
 }
 
-int checkStageAccess(int index) {
-    if (index == 0) return 1;
-    if (index == 1 && results[0] != 'P') {
-        printf("You must complete Stage 1 before Stage 2.\n");
-        return 0;
+int main() {
+    char input[10];
+
+    while (1) {
+        showMainMenu();
+        scanf("%s", input);
+
+        if (strcmp(input, "0") == 0 || toupper(input[0]) == 'Q') break;
+
+        int choice = atoi(input);
+
+        switch (choice) {
+            case 1:
+                printf("Audition Management selected.\n");
+                break;
+            case 2:
+                while (1) {
+                    showTrainingMenu();
+                    int stage;
+                    scanf("%d", &stage);
+                    if (stage == 0) break;
+                    if (stage >= 1 && stage <= MAX_STAGES) {
+                        handleTraining(stage - 1);
+                    } else {
+                        printf("Invalid training stage.\n");
+                    }
+                }
+                break;
+            case 3:
+                printf("Debut selected.\n");
+                break;
+            default:
+                printf("Invalid option. Try again.\n");
+        }
     }
-    if (index >= 2 && (results[0] != 'P' || results[1] != 'P')) {
-        printf("You must complete Stages 1 and 2 before accessing this stage.\n");
-        return 0;
-    }
-    return 1;
+
+    printf("Program exited.\n");
+    return 0;
 }
